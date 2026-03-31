@@ -22,7 +22,7 @@ final class CalendarViewModel: ObservableObject {
         didSet { UserDefaults.standard.set(reminderMinutes, forKey: "reminderMinutes") }
     }
 
-    private var store = EKEventStore()
+    private let store = EKEventStore()
     private var refreshTimer: Timer?
     private var notifiedEventIDs: Set<String> = []
 
@@ -65,7 +65,7 @@ final class CalendarViewModel: ObservableObject {
                     self?.hasAccess = granted
                     if granted {
                         self?.loadCalendars()
-                        self?.fetchEvents()
+                        self?.reloadEvents()
                     }
                 }
             }
@@ -75,7 +75,7 @@ final class CalendarViewModel: ObservableObject {
                     self?.hasAccess = granted
                     if granted {
                         self?.loadCalendars()
-                        self?.fetchEvents()
+                        self?.reloadEvents()
                     }
                 }
             }
@@ -105,7 +105,7 @@ final class CalendarViewModel: ObservableObject {
             selectedCalendarIDs.insert(id)
         }
         saveSelectedCalendars()
-        fetchEvents()
+        reloadEvents()
     }
 
     private func saveSelectedCalendars() {
@@ -120,8 +120,17 @@ final class CalendarViewModel: ObservableObject {
 
     // MARK: - Events
 
+    /// Triggers a source refresh, then queries after a short delay to allow sync.
     func fetchEvents() {
-        store = EKEventStore()
+        store.refreshSourcesIfNecessary()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            self?.reloadEvents()
+        }
+    }
+
+    /// Resets the store cache and queries events directly.
+    private func reloadEvents() {
+        store.reset()
         let now = Date()
         let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: now)!
         let predicate = store.predicateForEvents(withStart: now, end: endOfDay, calendars: nil)
@@ -165,7 +174,7 @@ final class CalendarViewModel: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             self?.loadCalendars()
-            self?.fetchEvents()
+            self?.reloadEvents()
         }
     }
 
