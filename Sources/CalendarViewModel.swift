@@ -22,7 +22,7 @@ final class CalendarViewModel: ObservableObject {
         didSet { UserDefaults.standard.set(reminderMinutes, forKey: "reminderMinutes") }
     }
 
-    private let store = EKEventStore()
+    private var store = EKEventStore()
     private var refreshTimer: Timer?
     private var notifiedEventIDs: Set<String> = []
 
@@ -121,8 +121,7 @@ final class CalendarViewModel: ObservableObject {
     // MARK: - Events
 
     func fetchEvents() {
-        store.reset()
-        store.refreshSourcesIfNecessary()
+        store = EKEventStore()
         let now = Date()
         let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: now)!
         let predicate = store.predicateForEvents(withStart: now, end: endOfDay, calendars: nil)
