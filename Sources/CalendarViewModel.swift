@@ -122,6 +122,7 @@ final class CalendarViewModel: ObservableObject {
 
     func fetchEvents() {
         store.reset()
+        store.refreshSourcesIfNecessary()
         let now = Date()
         let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: now)!
         let predicate = store.predicateForEvents(withStart: now, end: endOfDay, calendars: nil)
